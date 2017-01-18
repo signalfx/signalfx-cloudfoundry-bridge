@@ -32,13 +32,13 @@ The agent is configured by environment variables. Required configuration values:
     <dd>SignalFx access token</dd>
 
     <dt>JMX_SSL_CERT_SOURCE</dt>
-    <dd>Either FILE to read the JMX SSL cert from a file as specified in `JMX_SSL_CERT` or inline from the value of `JMX_SSL_CERT`</dd>
+    <dd>Either FILE to read the JMX SSL cert from a file as specified in <tt>JMX_SSL_CERT</tt> or inline from the value of <tt>JMX_SSL_CERT</tt></dd>
 
     <dt>JMX_SSL_CERT</dt>
-    <dd>See `JMX_SSL_CERT_SOURCE`</dd>
+    <dd>See <tt>JMX_SSL_CERT_SOURCE</tt></dd>
 
     <dt>JMX_SSL_ENABLED</dt>
-    <dd>`true` if connecting to JMX over SSL, otherwise `false`</dd>
+    <dd><tt>true</tt> if connecting to JMX over SSL, otherwise <tt>false</tt></dd>
 
     <dt>SFX_INGEST_URL</dt>
     <dd>Ingest URL for SignalFx</dd>
