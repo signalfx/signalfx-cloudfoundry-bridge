@@ -13,6 +13,7 @@ public class JobMetrics {
     private final static String ROUTER = "router";
     private final static String CLOUD_CONTROLLER = "cloud_controller";
     private final static String UAA = "uaa";
+    private final static String DOPPLER = "doppler";
 
     public static ImmutableMap<String, SignalFxProtocolBuffers.MetricType> systemAttributeToMetricType =
             ImmutableMap.<String, SignalFxProtocolBuffers.MetricType>builder()
@@ -67,11 +68,19 @@ public class JobMetrics {
                     .put("opentsdb.nozzle.uaa.audit_service.user_password_failures", SignalFxProtocolBuffers.MetricType.CUMULATIVE_COUNTER)
                     .build();
 
+    private static ImmutableMap<String, SignalFxProtocolBuffers.MetricType> dopplerAttributeToMetricType =
+            ImmutableMap.<String, SignalFxProtocolBuffers.MetricType>builder()
+                    .put("opentsdb.nozzle.DopplerServer.memoryStats.numBytesAllocatedStack", SignalFxProtocolBuffers.MetricType.GAUGE)
+                    .put("opentsdb.nozzle.DopplerServer.memoryStats.numBytesAllocatedHeap", SignalFxProtocolBuffers.MetricType.GAUGE)
+                    .put("opentsdb.nozzle.DopplerServer.sentMessagesFirehose", SignalFxProtocolBuffers.MetricType.CUMULATIVE_COUNTER)
+                    .build();
+
     public static ImmutableMap<String, ImmutableMap<String, SignalFxProtocolBuffers.MetricType>> mapper =
             ImmutableMap.<String, ImmutableMap<String, SignalFxProtocolBuffers.MetricType>>builder()
                     .put(DIEGO_CELL, diegoCellAttributeToMetricType)
                     .put(ROUTER, routerAttributeToMetricType)
                     .put(CLOUD_CONTROLLER, cloudControllerAttributeToMetricType)
                     .put(UAA, uaaAttributeToMetricType)
+                    .put(DOPPLER, dopplerAttributeToMetricType)
                     .build();
 }
