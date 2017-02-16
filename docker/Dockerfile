@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
     libxslt1-dev \
     libpq-dev \
     libmysqlclient-dev \
-    zlib1g-dev
+    zlib1g-dev \
+    m4
 
 RUN pip install tile-generator
 RUN gem install bosh_cli --no-ri --no-rdoc
@@ -24,9 +25,7 @@ RUN mkdir -p /opt
 WORKDIR /opt
 
 RUN mkdir -p /opt/build
-COPY build.gradle /opt/build
-COPY settings.gradle /opt/build
-COPY gradlew /opt/build
+COPY build.gradle settings.gradle gradlew VERSION /opt/build/
 COPY gradle /opt/build/gradle
 
 # Populate dependencies.

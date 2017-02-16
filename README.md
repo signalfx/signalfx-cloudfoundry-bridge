@@ -1,5 +1,5 @@
 # Overview
-This integration is used to report CloudFoundry platform metrics to SignalFx. The integration is composed of a Java agent that is built into a Pivotal tile and deployed via Ops Manager to Pivotal Cloud Foundry.
+This integration is used to report Cloud Foundry platform metrics to SignalFx. The integration is composed of a Java agent that is built into a Pivotal tile and deployed via Ops Manager to Pivotal Cloud Foundry.
 
 # Build
 ## Agent
@@ -14,9 +14,9 @@ To build the tile install the tile tools with `pip install tile-generator`. See 
 
 To build the tile run `make tile`.
 
-If you want to be able to push the newly built tile directly to CloudFoundry configure `pcf` [according to the documentation](https://docs.pivotal.io/tiledev/pcf-command.html).
+If you want to be able to push the newly built tile directly to Cloud Foundry configure `pcf` [according to the documentation](https://docs.pivotal.io/tiledev/pcf-command.html).
 
-You can now run `make build-and-push` to build and push the tile to your CloudFoundry instance. You'll then need to apply your changes through Ops Manager to deploy the new version.
+You can now run `make build-and-push` to build and push the tile to your Cloud Foundry instance. You'll then need to apply your changes through Ops Manager to deploy the new version.
 
 # Configuration
 The agent is configured by environment variables. Required configuration values:

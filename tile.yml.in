@@ -2,7 +2,7 @@
 name: signalfx-agent # By convention lowercase with dashes
 icon_file: resources/icon.png
 label: SignalFx Agent
-description: Reports CloudFoundry platform metrics to SignalFx
+description: Reports Cloud Foundry platform metrics to SignalFx
 
 # Global defaults (all optional)
 #
@@ -30,7 +30,7 @@ packages:
   type: app
   label: SignalFx Agent
   manifest:
-    path: build/libs/cf-agent-1.0-SNAPSHOT-all.jar
+    path: build/libs/cf-agent-VERSION-all.jar
     # XXX: No health check implemented thus far.
     health-check-type: none
     memory: 512M

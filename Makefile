@@ -2,6 +2,7 @@ BUILD_PUBLISH ?= False
 BUILD_BRANCH ?= $(USER)
 DOCKER_IMAGE := quay.io/signalfuse/cloudfoundry-build
 DOCKER_TAG := $(DOCKER_IMAGE):$(BUILD_BRANCH)
+VERSION := $(shell tr -d '\n' < VERSION)
 
 # For Jenkins.
 ifdef BASE_DIR
@@ -16,8 +17,14 @@ SRC_ROOT ?= $(PWD)
 jar:
 	./gradlew $(GRADLE_FLAGS) shadowJar
 
-tile: jar
-	tile build
+tile.yml: tile.yml.in VERSION
+	m4 -DVERSION=$(VERSION) < $< > $@
+
+tile: jar tile.yml
+	tile build $(VERSION)
+
+clean:
+	rm -rf build release tile.yml
 
 # The Docker-based build works by always attempting to build the builder image.
 # If nothing has changed then this will be a quick no-op. If it's changed then
@@ -27,7 +34,7 @@ tile: jar
 # dependencies so that the actual build step can be done completely offline
 # which makes it fast.
 docker-build:
-	docker run -t -v $(SRC_ROOT):/opt/src $(DOCKER_TAG) \
+	docker run -t --rm -v $(SRC_ROOT):/opt/src $(DOCKER_TAG) \
 		sh -c "cd /opt/src && make tile GRADLE_FLAGS=\"--offline --no-daemon --console plain\""
 
 docker-deps:
@@ -37,7 +44,7 @@ docker-deps:
 # Copy Docker skeleton.
 	cp -r docker/* build/docker-deps
 # Copy build files to source load dependencies from.
-	cp -r build.gradle settings.gradle gradlew gradle build/docker-deps
+	cp -r build.gradle settings.gradle gradlew gradle VERSION build/docker-deps
 	docker build -t $(DOCKER_TAG) build/docker-deps
 ifeq ($(BUILD_PUBLISH), True)
 	docker push $(DOCKER_TAG)
@@ -60,11 +67,8 @@ ifeq ($(BUILD_PUBLISH), True)
 		--acl private
 endif
 
-# TODO: Upload output
-
 build-and-push: tile
-	version=`ls product/*.pivotal | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+'` && \
-	pcf import product/*.pivotal && \
-	pcf install signalfx-agent $$version
+	pcf import product/signalfx-agent-$(VERSION).pivotal
+	pcf install signalfx-agent $(VERSION)
 
-.PHONY: jar tile build-and-push docker-deps docker-build docker-jar jenkins-build
+.PHONY: jar tile clean build-and-push docker-deps docker-build docker-jar jenkins-build
