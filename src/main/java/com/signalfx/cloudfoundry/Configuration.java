@@ -10,7 +10,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Store CloudFoundry platform configuration values.
+ * Store Cloud Foundry platform configuration values.
  */
 public class Configuration {
     private static final String JMX_IP = "JMX_IP";

@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'com.signalfx'
-version '1.0-SNAPSHOT'
+version new File('VERSION').text.trim()
 
 apply plugin: 'java'
 
