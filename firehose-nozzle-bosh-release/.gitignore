@@ -1,0 +1,7 @@
+*.tar.gz
+*.tgz
+.dev_builds/
+.final_builds/
+.blobs/
+tmp/
+dev_releases/

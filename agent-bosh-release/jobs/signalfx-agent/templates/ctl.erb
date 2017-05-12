@@ -1,0 +1,47 @@
+#!/bin/bash
+
+RUN_DIR=/var/vcap/sys/run/collectd
+LOG_DIR=/var/vcap/sys/log/collectd
+PIDFILE=${RUN_DIR}/pid
+
+COLLECTD_PACKAGE=/var/vcap/packages/signalfx-collectd
+RUNC_PACKAGE=/var/vcap/packages/runc
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR
+    chown -R vcap:vcap $RUN_DIR $LOG_DIR
+
+    # Make sure cgroups are setup properly for runc (BOSH-Lite definitely
+    # doesn't have them mounted)
+    if ! mount | grep cgroup
+    then
+      mount -t tmpfs cgroup /sys/fs/cgroup
+      mount -t cgroup -o memory cgroup_memory /sys/fs/cgroup/memory
+      mount -t cgroup -o cpu cgroup_cpu /sys/fs/cgroup/cpu
+      mount -t cgroup -o devices cgroup_devices /sys/fs/cgroup/devices
+    fi
+
+    echo $$ > $PIDFILE
+
+    cd $COLLECTD_PACKAGE
+
+    sed -i -e "s/<SF_API_TOKEN>/<%= p('signalfx.api_token') %>/" config.json
+
+    exec ${RUNC_PACKAGE}/runc run signalfx-collectd
+      >>  $LOG_DIR/collectd.stdout.log \
+      2>> $LOG_DIR/collectd.stderr.log
+
+    ;;
+
+  stop)
+    kill -9 `cat $PIDFILE`
+    rm -f $PIDFILE
+
+    ;;
+
+  *)
+    echo "Usage: ctl {start|stop}" ;;
+
+esac
