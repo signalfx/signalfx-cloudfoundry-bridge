@@ -30,6 +30,7 @@ packages:
   type: app
   label: SignalFx Agent
   manifest:
+    buildpack: https://github.com/cloudfoundry/java-buildpack.git
     path: build/libs/cf-agent-VERSION-all.jar
     # XXX: No health check implemented thus far.
     health-check-type: none
