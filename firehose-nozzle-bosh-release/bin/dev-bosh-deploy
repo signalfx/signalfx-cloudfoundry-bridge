@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+cd bosh-release
+
+echo 'Targeting local bosh-lite VM'
+cat <<EOH > ~/.bosh_config
+---
+target: https://192.168.50.4:25555
+EOH
+
+bosh login admin admin
+
+bosh delete deployment signalfx-firehose-nozzle --force
+bosh releases | grep 'signalfx' && bosh delete release signalfx-firehose-nozzle --force
+bosh deployment bosh-lite/deployment.yml
+bosh upload release
+bosh deploy

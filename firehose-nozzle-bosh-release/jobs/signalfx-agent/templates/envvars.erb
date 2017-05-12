@@ -1,0 +1,12 @@
+#!/bin/bash
+
+export CLOUDFOUNDRY_API_URL="<%= p("cf.api_url") %>"
+export UAA_URL="<%= p("uaa.url") %>"
+export UAA_USERNAME=<%= p("uaa.username") %>
+export UAA_PASSWORD=<%= p("uaa.password") %>
+export FIREHOSE_SUBSCRIPTION_ID="<%= p("nozzle.subscription_id") %>"
+export FLUSH_INTERVAL_SECONDS=<%= p("signalfx.flush_interval_seconds") %>
+export INSECURE_SSL_SKIP_VERIFY=<%= p("nozzle.insecure_ssl_skip_verify") %>
+export APP_METADATA_CACHE_EXPIRY_SECONDS=<%= p("nozzle.app_metadata_cache_expiry_seconds") %>
+
+export SIGNALFX_ACCESS_TOKEN=<%= p("signalfx.access_token") %>

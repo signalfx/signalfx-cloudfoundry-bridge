@@ -1,0 +1,1 @@
+*/<%= p("signalfx.logrotate.freq_min") %> * * * * test -x /usr/sbin/logrotate && /usr/sbin/logrotate /var/vcap/jobs/signalfx-firehose-nozzle/config/logrotate.conf >> /var/vcap/sys/log/signalfx-firehose-nozzle/signalfx_logrotate_cron.log 2>&1

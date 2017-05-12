@@ -1,0 +1,5 @@
+check process signalfx-firehose-nozzle
+  with pidfile /var/vcap/sys/run/signalfx-firehose-nozzle/pid
+  start program "/var/vcap/jobs/signalfx-firehose-nozzle/bin/ctl start"
+  stop program "/var/vcap/jobs/signalfx-firehose-nozzle/bin/ctl stop"
+  group vcap
