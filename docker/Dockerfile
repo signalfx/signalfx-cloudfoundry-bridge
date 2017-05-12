@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     m4
 
-RUN pip install tile-generator
+RUN pip install tile-generator>=6.0.0
 RUN gem install bosh_cli --no-ri --no-rdoc
 
 RUN mkdir -p /opt
