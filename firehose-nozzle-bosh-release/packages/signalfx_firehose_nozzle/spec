@@ -1,8 +1,0 @@
----
-name: signalfx_agent
-
-dependencies:
-  - golang1.8
-
-files:
-  - signalfx_agent/**/*

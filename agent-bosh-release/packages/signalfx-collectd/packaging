@@ -1,7 +1,0 @@
-# abort script on any command that exits with a non zero value
-set -e
-
-tar -xf signalfx-collectd/collectd-rootfs.tar.gz
-
-cp -R rootfs ${BOSH_INSTALL_TARGET}
-cp signalfx-collectd/runc-config.json ${BOSH_INSTALL_TARGET}/config.json

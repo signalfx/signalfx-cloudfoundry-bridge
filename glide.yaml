@@ -1,0 +1,29 @@
+package: github.com/signalfx/cloudfoundry-bridge
+import:
+- package: github.com/caarlos0/env
+- package: github.com/cloudfoundry-community/go-cfclient
+- package: github.com/cloudfoundry-incubator/uaago
+- package: github.com/cloudfoundry/bosh-hm-forwarder
+  subpackages:
+  - tcp
+- package: github.com/cloudfoundry/noaa
+  subpackages:
+  - consumer
+- package: github.com/cloudfoundry/sonde-go
+  subpackages:
+  - events
+- package: github.com/gogo/protobuf
+  subpackages:
+  - proto
+- package: github.com/gorilla/websocket
+- package: github.com/onsi/gomega
+- package: github.com/signalfx/com_signalfx_metrics_protobuf
+- package: github.com/signalfx/golib
+  subpackages:
+  - datapoint
+  - sfxclient
+- package: golang.org/x/net
+  subpackages:
+  - context
+testImport:
+- package: github.com/onsi/ginkgo

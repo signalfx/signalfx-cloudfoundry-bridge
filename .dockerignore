@@ -1,8 +1,1 @@
-release/
-product/
-build/
-.git/
-bosh-release/dev_releases
-bosh-release/.blobs
-bosh-release/.dev_builds
-bosh-release/.final_builds
+vendor/

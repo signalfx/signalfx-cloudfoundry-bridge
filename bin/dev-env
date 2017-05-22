@@ -1,0 +1,24 @@
+#!/bin/bash -xe
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+test -f $DIR/dev-env.uaa-password || \
+  (echo "Please make a file in the dir of this script called dev-env.uaa-password and put the UAA password of your nozzle user in it" && exit 1)
+test -f $DIR/dev-env.sfx-token || \
+  (echo "Please make a file in the dir of this script called dev-env.sfx-token and put an API token in it." && exit 1)
+
+
+export CLOUDFOUNDRY_API_URL="https://api.cf.integrations.corp.signalfx.com"
+export UAA_URL="https://uaa.cf.integrations.corp.signalfx.com"
+export UAA_USERNAME=signalfx-bridge
+
+export UAA_PASSWORD=$(cat $DIR/dev-env.uaa-password)
+export FIREHOSE_SUBSCRIPTION_ID="signalfx"
+export FLUSH_INTERVAL_SECONDS=3
+export INSECURE_SSL_SKIP_VERIFY=true
+export APP_METADATA_CACHE_EXPIRY_SECONDS=300
+
+export SIGNALFX_ACCESS_TOKEN=$(cat $DIR/dev-env.sfx-token)
+export SIGNALFX_INGEST_URL=http://lab-ingest.corp.signalfuse.com/v2/datapoint
+
+export DEBUG=yes
