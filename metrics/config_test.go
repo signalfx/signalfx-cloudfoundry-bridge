@@ -5,7 +5,7 @@ import (
 
     . "github.com/onsi/ginkgo"
     . "github.com/onsi/gomega"
-    "github.com/signalfx/cloudfoundry-bridge/metrics"
+    "github.com/signalfx/signalfx-bridge/metrics"
 )
 
 var _ = Describe("NozzleConfig", func() {

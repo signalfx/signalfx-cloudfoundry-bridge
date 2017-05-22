@@ -13,9 +13,9 @@ import (
 
     . "github.com/onsi/ginkgo"
     . "github.com/onsi/gomega"
-    . "github.com/signalfx/cloudfoundry-bridge/testhelpers"
+    . "github.com/signalfx/signalfx-bridge/testhelpers"
 
-    "github.com/signalfx/cloudfoundry-bridge/metrics"
+    "github.com/signalfx/signalfx-bridge/metrics"
 )
 
 
@@ -102,7 +102,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
                 },
                 Deployment: proto.String("deployment-name"),
                 Job:        proto.String("doppler"),
-                Index:      proto.String("0"),
+                Index:      proto.String("abcdefg"),
                 Ip:         proto.String("127.0.0.1"),
             }
             fakeFirehose.AddEvent(envelope)
@@ -137,7 +137,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         Expect(dimensions["host"]).To(Equal("127.0.0.1"))
         Expect(dimensions["job"]).To(Equal("doppler"))
         Expect(dimensions["deployment"]).To(Equal("deployment-name"))
-        Expect(dimensions["index"]).To(Equal("0"))
+        Expect(dimensions["id"]).To(Equal("abcdefg"))
     }, 5)
 
     It("forwards ContainerMetrics from the firehose", func(done Done) {
@@ -159,7 +159,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
             },
             Deployment: proto.String("deployment-name"),
             Job:        proto.String("diego"),
-            Index:      proto.String("0"),
+            Index:      proto.String("abcdefg"),
             Ip:         proto.String("127.0.0.1"),
         }
         fakeFirehose.AddEvent(envelope)
@@ -184,7 +184,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         Expect(dimensions["host"]).To(Equal("127.0.0.1"))
         Expect(dimensions["job"]).To(Equal("diego"))
         Expect(dimensions["deployment"]).To(Equal("deployment-name"))
-        Expect(dimensions["index"]).To(Equal("0"))
+        Expect(dimensions["id"]).To(Equal("abcdefg"))
         Expect(dimensions["app_id"]).To(Equal("testapp"))
         Expect(dimensions["app_instance_index"]).To(Equal("2"))
         Expect(dimensions["app_name"]).To(Equal("app-testapp"))
