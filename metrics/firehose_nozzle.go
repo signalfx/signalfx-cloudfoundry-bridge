@@ -158,10 +158,8 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
         "metric_source": "cloudfoundry",
     }
 
-	if envelope.GetTags() != nil {
-		for k, v := range envelope.GetTags() {
-			dimensions[k] = v
-		}
+	for k, v := range envelope.GetTags() {
+		dimensions[k] = v
 	}
 
     ts := time.Unix(0, envelope.GetTimestamp())
