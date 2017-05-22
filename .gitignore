@@ -1,10 +1,5 @@
-product/
-release/
-/dev-env
-
-
-/metadata
-/.idea
-/build
-/.gradle
-/tile.yml
+vendor/
+bridge
+bridge-linux-amd64
+bin/dev-env.sfx-token
+bin/dev-env.uaa-password

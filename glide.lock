@@ -1,0 +1,114 @@
+hash: c1c40687691bd49d1df151fe76bef870a68050a9391ed132af8ad443e4388212
+updated: 2017-05-22T10:34:25.849106607-04:00
+imports:
+- name: github.com/caarlos0/env
+  version: 9474f19b515f52326c7d197d2d097caa7fc7485e
+- name: github.com/cloudfoundry-community/go-cfclient
+  version: a7d44cb5dabc925e9390cf0b90112020a162d4ed
+- name: github.com/cloudfoundry-incubator/uaago
+  version: 5673cb47f5a48458e28c77e5948503602312de2e
+- name: github.com/cloudfoundry/bosh-hm-forwarder
+  version: 91a55a61aa441f5d07ae93782849d236564e6013
+  subpackages:
+  - tcp
+- name: github.com/cloudfoundry/noaa
+  version: dd6ec6bd0a0182d44fbd738bcb044adeed8171bb
+  subpackages:
+  - consumer
+  - consumer/internal
+  - errors
+- name: github.com/cloudfoundry/sonde-go
+  version: 78019103037ae46207993c8816e970d85bf1a9e4
+  subpackages:
+  - events
+- name: github.com/gogo/protobuf
+  version: 30433562cfbf487fe1df7cd26c7bab168d2f14d0
+  subpackages:
+  - gogoproto
+  - proto
+  - protoc-gen-gogo/descriptor
+- name: github.com/golang/protobuf
+  version: 18c9bb3261723cd5401db4d0c9fbc5c3b6c70fe8
+  subpackages:
+  - proto
+- name: github.com/gorilla/websocket
+  version: a91eba7f97777409bc2c443f5534d41dd20c5720
+- name: github.com/kr/logfmt
+  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/onsi/gomega
+  version: 4dfabf7db2e4147ec99a86db32b2f2a3484cfee8
+  subpackages:
+  - format
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types
+- name: github.com/pkg/errors
+  version: bfd5150e4e41705ded2129ec33379de1cb90b513
+- name: github.com/signalfx/com_signalfx_metrics_protobuf
+  version: 93e507b42f43f458a109ca278d1542a26a0b87fc
+- name: github.com/signalfx/gohistogram
+  version: 1ccfd2ff508314074672f4450a917011a2060408
+- name: github.com/signalfx/golib
+  version: cb7680940d605b817db79790c241eed2a00fa6e6
+  subpackages:
+  - datapoint
+  - errors
+  - event
+  - eventcounter
+  - log
+  - sfxclient
+  - timekeeper
+- name: golang.org/x/net
+  version: 7dbad50ab5b31073856416cdcfeb2796d682f844
+  subpackages:
+  - context
+- name: golang.org/x/oauth2
+  version: 2baa8a1b9338cf13d9eeb27696d761155fa480be
+  subpackages:
+  - clientcredentials
+  - internal
+- name: google.golang.org/appengine
+  version: 170382fa85b10b94728989dfcf6cc818b335c952
+  subpackages:
+  - internal
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
+- name: gopkg.in/logfmt.v0
+  version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
+- name: gopkg.in/stack.v1
+  version: 100eb0c0a9c5b306ca2fb4f165df21d80ada4b82
+testImports:
+- name: github.com/onsi/ginkgo
+  version: 83438ca4278f2f56757b9ab2cb15dd4f596d84e8
+  subpackages:
+  - config
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/spec_iterator
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - reporters/stenographer/support/go-colorable
+  - reporters/stenographer/support/go-isatty
+  - types
+- name: golang.org/x/sys
+  version: 9ccfe848b9db8435a24c424abbc07a921adf1df5
+  subpackages:
+  - unix
