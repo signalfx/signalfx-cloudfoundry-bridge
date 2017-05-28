@@ -9,8 +9,6 @@ import (
     "strconv"
     "time"
 
-    "github.com/cloudfoundry/sonde-go/events"
-    "github.com/gogo/protobuf/proto"
     sfxproto "github.com/signalfx/com_signalfx_metrics_protobuf"
     "github.com/signalfx/golib/sfxclient"
 
@@ -24,26 +22,37 @@ import (
 
 var _ = Describe("TSDBServer", func() {
     var fakeSignalFx *FakeSignalFx
+    var fakeUAA *FakeUAA
+    var fakeBosh *FakeBosh
     var sfxClient *sfxclient.HTTPSink
-	var tsdbServer *metrics.TSDBServer
+    var tsdbServer *metrics.TSDBServer
     var port int
-	var ipLookup *metrics.IPLookup
 
     BeforeEach(func() {
+        fakeUAA = NewFakeUAA("bearer", "123456789")
+        fakeUAA.Start()
+
         fakeSignalFx = NewFakeSignalFx()
         fakeSignalFx.Start()
+
+        fakeBosh = NewFakeBosh()
+        fakeBosh.Start()
 
         sfxClient = sfxclient.NewHTTPSink()
         sfxClient.DatapointEndpoint = fakeSignalFx.URL()
 
-		ipLookup = metrics.NewIPLookup()
-		go ipLookup.ListenForEnvelopes()
+        tokenFetcher := &metrics.UAATokenFetcher{
+            UaaUrl: fakeUAA.URL(),
+        }
+
+        boshClient := metrics.NewBoshClient(fakeBosh.URL(), tokenFetcher, true)
+        bosh := metrics.NewBoshMetadataFetcher(boshClient)
 
         port = 13321
 
         go func() {
             for {
-				tsdbServer = metrics.NewTSDBServer(sfxClient, 1, port, ipLookup)
+                tsdbServer = metrics.NewTSDBServer(sfxClient, 1, port, bosh)
                 err := tsdbServer.Start()
                 if err != nil {
                     // Make the tests more robust by not being dependent on a
@@ -73,8 +82,9 @@ var _ = Describe("TSDBServer", func() {
 
     AfterEach(func() {
         fakeSignalFx.Close()
-		ipLookup.Stop()
-		tsdbServer.Stop()
+        fakeUAA.Close()
+        fakeBosh.Close()
+        tsdbServer.Stop()
     })
 
     sendTSDBLine := func(line string) {
@@ -115,20 +125,9 @@ var _ = Describe("TSDBServer", func() {
         Expect(dp.GetValue().GetDoubleValue()).To(Equal(0.6))
     })
 
-	It("uses the ip lookup table to add host dimension", func() {
-		ipLookup.SubmitEnvelope(&events.Envelope{
-            Index:      proto.String("84d86321-8040-464f-be37-2389135e16bc"),
-            Ip:         proto.String("10.0.5.5"),
-        })
-		ipLookup.SubmitEnvelope(&events.Envelope{
-            Index:      proto.String("cd14da4b-b764-4e45-b6c3-142a8a058f4a"),
-            Ip:         proto.String("10.0.10.10"),
-        })
-
-		Eventually(func() string {
-			return ipLookup.GetIPAddress("cd14da4b-b764-4e45-b6c3-142a8a058f4a")
-		}, 5).Should(Equal("10.0.10.10"))
-
+    It("uses the BOSH metadata fetcher to add host dimension", func() {
+        fakeBosh.AddVM("p-metrics-d9889b7d6988533733d6", "84d86321-8040-464f-be37-2389135e16bc", "10.0.5.5")
+        fakeBosh.AddVM("cf-1f83d62c70fa873ce366", "cd14da4b-b764-4e45-b6c3-142a8a058f4a", "10.0.10.10")
 
         sendTSDBLine("put system.disk.ephemeral.percent 1493049192 2 deployment=p-metrics-d9889b7d6988533733d6 id=84d86321-8040-464f-be37-2389135e16bc index=0 job=opentsdb-metrics role=unknown")
         sendTSDBLine("put system.cpu.user 1493049198 0.6 deployment=cf-1f83d62c70fa873ce366 id=cd14da4b-b764-4e45-b6c3-142a8a058f4a index=0 job=consul_server role=unknown")
@@ -143,5 +142,5 @@ var _ = Describe("TSDBServer", func() {
         dp = datapoints[1]
         dimensions = ProtoDimensionsToMap(dp.GetDimensions())
         Expect(dimensions["host"]).To(Equal("10.0.10.10"))
-	})
+    })
 })

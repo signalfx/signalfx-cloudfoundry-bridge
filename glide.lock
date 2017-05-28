@@ -1,12 +1,10 @@
-hash: c1c40687691bd49d1df151fe76bef870a68050a9391ed132af8ad443e4388212
-updated: 2017-05-22T10:34:25.849106607-04:00
+hash: e442de7e3e9c88f932416b619fa954f64fe06f11e7b9096b87fd0c0391402a74
+updated: 2017-05-27T11:53:08.005191459-04:00
 imports:
 - name: github.com/caarlos0/env
   version: 9474f19b515f52326c7d197d2d097caa7fc7485e
 - name: github.com/cloudfoundry-community/go-cfclient
   version: a7d44cb5dabc925e9390cf0b90112020a162d4ed
-- name: github.com/cloudfoundry-incubator/uaago
-  version: 5673cb47f5a48458e28c77e5948503602312de2e
 - name: github.com/cloudfoundry/bosh-hm-forwarder
   version: 91a55a61aa441f5d07ae93782849d236564e6013
   subpackages:
@@ -64,6 +62,8 @@ imports:
   - log
   - sfxclient
   - timekeeper
+- name: github.com/signalfx/uaago
+  version: 4812d61e49d5ad301746b6caf2a7672e88789296
 - name: golang.org/x/net
   version: 7dbad50ab5b31073856416cdcfeb2796d682f844
   subpackages:

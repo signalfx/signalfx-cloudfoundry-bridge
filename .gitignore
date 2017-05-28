@@ -1,5 +1,7 @@
 vendor/
-bridge
+signalfx-bridge
 bridge-linux-amd64
+signalfx-bridge-linux-amd64
 bin/dev-env.sfx-token
-bin/dev-env.uaa-password
+bin/dev-env.cf-password
+bin/dev-env.bosh-password

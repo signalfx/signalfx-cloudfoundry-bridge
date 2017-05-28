@@ -7,7 +7,6 @@ import (
     "os/signal"
     "runtime"
     "runtime/pprof"
-    "strings"
     "syscall"
 
     "github.com/signalfx/golib/sfxclient"
@@ -30,18 +29,17 @@ func main() {
     defer close(threadDumpChan)
     go dumpGoRoutine(threadDumpChan)
 
-    tokenFetcher := &UAATokenFetcher{
-        UaaUrl:                config.UAAURL,
-        Username:              config.Username,
-        Password:              config.Password,
-        InsecureSSLSkipVerify: config.InsecureSSLSkipVerify,
+    cfTokenFetcher := &UAATokenFetcher{
+        UaaUrl:        config.CFUAAURL,
+        Username:      config.CFUsername,
+        Password:      config.CFPassword,
+        SSLSkipVerify: config.InsecureSSLSkipVerify,
     }
 
-    // The CF client lib doesn't like the token type prefixed to the token
-    token := strings.Replace(tokenFetcher.FetchAuthToken(), "bearer ", "", 1)
     cloudfoundry, err := cfclient.NewClient(&cfclient.Config{
-        ApiAddress: config.CloudFoundryApiUrl,
-        Token: token,
+        ApiAddress: config.CloudFoundryApiURL,
+        ClientID: config.CFUsername,
+        ClientSecret: config.CFPassword,
         SkipSslValidation: config.InsecureSSLSkipVerify,
     })
     if err != nil {
@@ -52,15 +50,23 @@ func main() {
         config.TrafficControllerURL = cloudfoundry.Endpoint.DopplerEndpoint
     }
 
-
     sfxClient := sfxclient.NewHTTPSink()
     sfxClient.AuthToken = config.SignalFxAccessToken
     if config.SignalFxIngestURL != "" {
         sfxClient.DatapointEndpoint = config.SignalFxIngestURL
     }
 
-	ipLookup := NewIPLookup()
-	go ipLookup.ListenForEnvelopes()
+    boshUAAUrl := GetBoshUAAUrl(config.BoshDirectorURL, config.InsecureSSLSkipVerify)
+    boshTokenFetcher := &UAATokenFetcher{
+        UaaUrl:        boshUAAUrl,
+        Username:      config.BoshUsername,
+        Password:      config.BoshPassword,
+        SSLSkipVerify: config.InsecureSSLSkipVerify,
+    }
+    boshClient := NewBoshClient(config.BoshDirectorURL,
+                                boshTokenFetcher,
+                                config.InsecureSSLSkipVerify)
+    bosh := NewBoshMetadataFetcher(boshClient)
 
     errChan := make(chan error)
 
@@ -68,13 +74,13 @@ func main() {
         metadataFetcher := NewAppMetadataFetcher(cloudfoundry)
         metadataFetcher.CacheExpirySeconds = config.AppMetadataCacheExpirySeconds
 
-        nozzle := NewSignalFxFirehoseNozzle(config, tokenFetcher, sfxClient, metadataFetcher, ipLookup)
+        nozzle := NewSignalFxFirehoseNozzle(config, cfTokenFetcher, sfxClient, metadataFetcher)
         nozzle.Start()
         errChan <- errors.New("Firehose Nozzle quit unexpectedly")
     }()
 
     go func() {
-		tsdbErr := NewTSDBServer(sfxClient, config.FlushIntervalSeconds, 0, ipLookup).Start()
+        tsdbErr := NewTSDBServer(sfxClient, config.FlushIntervalSeconds, 0, bosh).Start()
 
         errChan <- tsdbErr
     }()

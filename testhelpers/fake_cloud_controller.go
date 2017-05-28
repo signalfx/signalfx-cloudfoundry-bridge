@@ -8,7 +8,7 @@ import (
 )
 
 
-// Provides mock data for the AppMetadataFetcher
+// Provides mock data for the Cloud Controller API Client
 
 
 // Data for the /v2/info endpoint

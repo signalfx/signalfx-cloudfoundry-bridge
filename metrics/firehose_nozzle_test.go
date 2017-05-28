@@ -28,7 +28,6 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
     var nozzle *metrics.SignalFxFirehoseNozzle
     var tokenFetcher *metrics.UAATokenFetcher
     var client *sfxclient.HTTPSink
-	var ipLookup *metrics.IPLookup
 
     fakeFirehoseURL := func(ffh *FakeFirehose) string { return strings.Replace(ffh.URL(), "http:", "ws:", 1) }
 
@@ -48,7 +47,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         }
 
         config = &metrics.Config{
-            UAAURL:               fakeUAA.URL(),
+            CFUAAURL:             fakeUAA.URL(),
             TrafficControllerURL: fakeFirehoseURL(fakeFirehose),
             FlushIntervalSeconds: 1,
             FirehoseReconnectDelaySeconds: 1,
@@ -70,18 +69,14 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         }
         metadataFetcher := metrics.NewAppMetadataFetcher(cloudfoundryClient)
 
-		ipLookup = metrics.NewIPLookup()
-		go ipLookup.ListenForEnvelopes()
-
         fakeFirehose.KeepConnectionAlive()
-        nozzle = metrics.NewSignalFxFirehoseNozzle(config, tokenFetcher, client, metadataFetcher, ipLookup)
+        nozzle = metrics.NewSignalFxFirehoseNozzle(config, tokenFetcher, client, metadataFetcher)
     })
 
     AfterEach(func() {
         fakeUAA.Close()
         fakeFirehose.Close()
         fakeSignalFx.Close()
-		ipLookup.Stop()
     })
 
     It("forwards ValueMetrics from the firehose", func(done Done) {
@@ -191,39 +186,6 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         Expect(dimensions["app_org"]).To(Equal("myorg"))
         Expect(dimensions["app_space"]).To(Equal("myspace"))
     }, 5)
-
-	It("puts envelopes into the ip lookup table", func(done Done) {
-        defer close(done)
-        defer GinkgoRecover()
-
-        envelope := events.Envelope{
-            Origin:    proto.String("rep"),
-            Timestamp: proto.Int64(1000000000),
-            EventType: events.Envelope_ContainerMetric.Enum(),
-            ContainerMetric: &events.ContainerMetric{
-                ApplicationId:  proto.String("testapp"),
-                InstanceIndex: proto.Int32(2),
-                CpuPercentage: proto.Float64(5.5),
-                MemoryBytes: proto.Uint64(1000),
-                DiskBytes: proto.Uint64(1000),
-                MemoryBytesQuota: proto.Uint64(10000),
-                DiskBytesQuota: proto.Uint64(10000),
-            },
-            Deployment: proto.String("deployment-name"),
-            Job:        proto.String("diego"),
-            Index:      proto.String("abcdefg"),
-            Ip:         proto.String("127.0.0.5"),
-        }
-        fakeFirehose.AddEvent(envelope)
-
-        go nozzle.Start()
-        defer nozzle.Stop()
-
-		Eventually(func() string {
-			return ipLookup.GetIPAddress("abcdefg")
-		}, 5).Should(Equal("127.0.0.5"))
-	})
-
 
     Context("when the firehose sends an error", func() {
         It("should reconnect with different token", func(done Done) {
