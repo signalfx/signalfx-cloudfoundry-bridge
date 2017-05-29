@@ -48,11 +48,13 @@ var _ = Describe("TSDBServer", func() {
         boshClient := metrics.NewBoshClient(fakeBosh.URL(), tokenFetcher, true)
         bosh := metrics.NewBoshMetadataFetcher(boshClient)
 
+        metricFilter := metrics.NewMetricFilter(&metrics.Config{})
+
         port = 13321
 
         go func() {
             for {
-                tsdbServer = metrics.NewTSDBServer(sfxClient, 1, port, bosh)
+                tsdbServer = metrics.NewTSDBServer(sfxClient, 1, port, bosh, metricFilter)
                 err := tsdbServer.Start()
                 if err != nil {
                     // Make the tests more robust by not being dependent on a

@@ -57,3 +57,7 @@ func (f *FakeSignalFx) GetIngestedDatapoints() []*sfxproto.DataPoint {
 
     return dpUpload.GetDatapoints()
 }
+
+func (f *FakeSignalFx) EnsureNoDatapoints() {
+    Consistently(f.ReceivedContents, 4).ShouldNot(Receive())
+}
