@@ -42,8 +42,11 @@ type BoshClient struct {
     authTokenFetcher      AuthTokenFetcher
     baseURL               string
     client                *http.Client
+    // Cached value from the authTokenFetcher
     authToken             string
+    // Whether we're in the middle of retrying with a new auth token
     retrying              bool
+    // How long to wait for the VM info task before canceling
     VMFetchTaskTimeoutSeconds int
 }
 
@@ -54,6 +57,7 @@ func makeBoshHttpClient(skipSSLVerify bool) *http.Client {
         TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSSLVerify},
         Proxy: http.ProxyFromEnvironment,
     }
+
     return &http.Client{
                Transport: tr,
                Timeout: time.Duration(10) * time.Second,
@@ -80,6 +84,7 @@ func GetBoshUAAUrl(boshUrl string, skipSSLVerify bool) string {
     if err != nil {
         log.Fatal("Could not get BOSH /info endpoint: ", err)
     }
+    defer resp.Body.Close()
 
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
@@ -104,24 +109,24 @@ func (o *BoshClient) NewGetRequest(path string) *http.Request {
     if err != nil {
         log.Panic("Something is wrong with the BOSHClient config: ", err)
     }
+
     return req
 }
 
-// Returns the body text, or empty string if there was error
-func (o *BoshClient) doRequest(req *http.Request) ([]byte, string) {
+// Returns the body text and response, or empty bytes/nil if there was error
+func (o *BoshClient) doRequest(req *http.Request, expectedStatus int) ([]byte, *http.Response) {
     if o.authToken == "" {
         log.Printf("Fetching BOSH Auth Token")
         o.authToken = o.authTokenFetcher.FetchAuthToken()
-        log.Printf("Done fetching BOSH Auth Token")
     }
 
-    // The uaa_token includes the "bearer " prefix
+    // The uaa token includes the "bearer " prefix
     req.Header.Set("Authorization", o.authToken)
 
     resp, err := o.client.Do(req)
     if err != nil {
         log.Printf("Error fetching BOSH metadata (URL: %s): %v", req.URL.String(), err)
-        return []byte{}, ""
+        return nil, nil
     }
     defer resp.Body.Close()
 
@@ -130,10 +135,10 @@ func (o *BoshClient) doRequest(req *http.Request) ([]byte, string) {
             log.Print("BOSH UAA Token is not working, retrying with new token...")
             o.retrying = true
             o.authToken = ""
-            return o.doRequest(req)
+            return o.doRequest(req, expectedStatus)
         } else {
             log.Fatal("A new auth token didn't help authenticating to the BOSH " +
-                      "Director.  Please check configuration")
+                      "Director.  Please check configuration.")
         }
     }
     o.retrying = false
@@ -141,40 +146,48 @@ func (o *BoshClient) doRequest(req *http.Request) ([]byte, string) {
     bodyText, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         log.Printf("Error reading response from BOSH Director (URL: %s): %v", req.URL.String(), err)
-        return []byte{}, ""
+        return nil, resp
     }
 
-    if resp.StatusCode != 200 && resp.StatusCode != 302 {
-        log.Printf("Unexpected status %d fetching BOSH metadata (URL: %s): %s",
-                   resp.StatusCode, req.URL.String(), bodyText)
-        return []byte{}, ""
+    if resp.StatusCode != expectedStatus {
+        log.Printf("Unexpected status %d (expected %d) fetching BOSH metadata (URL: %s): %s",
+                   resp.StatusCode, expectedStatus, req.URL.String(), bodyText)
+        return nil, resp
     }
 
-    return bodyText, resp.Header.Get("Location")
+    return bodyText, resp
 }
 
 func (o *BoshClient) fetchDeployments() []Deployment {
-    respText, _ := o.doRequest(o.NewGetRequest("/deployments"))
+    respText, _ := o.doRequest(o.NewGetRequest("/deployments"), 200)
 
     if len(respText) == 0 {
-        return []Deployment{}
+        // Errors would have been logged in the doRequest method
+        return nil
     }
 
     deployments := make([]Deployment, 0)
-    json.Unmarshal(respText, &deployments)
+    err := json.Unmarshal(respText, &deployments)
+    if err != nil {
+        log.Printf("Could not parse BOSH deployments response (%s): %s",
+                   respText, err)
+    }
+
     return deployments
 }
 
 // This is a long-running task so it's a bit more complex to handle.  The
 // polling method seems simplest even if not very efficient.
 func (o *BoshClient) fetchVMs(deploymentName string) []BoshVM {
-    _, taskUrlStr := o.doRequest(o.NewGetRequest("/deployments/" + deploymentName + "/vms?format=full"))
+    _, resp := o.doRequest(o.NewGetRequest("/deployments/" + deploymentName + "/vms?format=full"), 302)
 
+    taskUrlStr := resp.Header.Get("Location")
     if len(taskUrlStr) == 0 {
-        return []BoshVM{}
+        return nil
     }
 
     taskOutput := o.waitForTask(taskUrlStr)
+
     vms := make([]BoshVM, 0, 10)
     for _, vmJson := range strings.Split(string(taskOutput), "\n") {
         if vmJson == "" {
@@ -182,7 +195,11 @@ func (o *BoshClient) fetchVMs(deploymentName string) []BoshVM {
         }
 
         vm := BoshVM{}
-        json.Unmarshal([]byte(vmJson), &vm)
+        err := json.Unmarshal([]byte(vmJson), &vm)
+        if err != nil {
+            log.Printf("Could not parse deployment VM task output (%s): %s", vmJson, err)
+            return nil
+        }
         vms = append(vms, vm)
     }
     return vms
@@ -195,18 +212,25 @@ func (o *BoshClient) waitForTask(taskUrlStr string) []byte {
         taskUrl, err := url.Parse(taskUrlStr)
         if err != nil {
             log.Printf("Error parsing task url %s: %s", taskUrlStr, err)
-            return []byte{}
+            return nil
         }
-        taskText, _ := o.doRequest(o.NewGetRequest(taskUrl.Path))
+
+        taskText, _ := o.doRequest(o.NewGetRequest(taskUrl.Path), 200)
+
         task := BoshTask{}
-        json.Unmarshal(taskText, &task)
+        err = json.Unmarshal(taskText, &task)
+        if err != nil {
+            log.Printf("Could not parse task JSON body (%s): %s", taskText, err)
+            return nil
+        }
+
         if task.State == "done" {
-            outputText, _ := o.doRequest(o.NewGetRequest(taskUrl.Path + "/output?type=result"))
+            outputText, _ := o.doRequest(o.NewGetRequest(taskUrl.Path + "/output?type=result"), 200)
             return outputText
         } else if waitStart.Add(time.Duration(o.VMFetchTaskTimeoutSeconds) * time.Second).Before(time.Now()) {
             log.Printf("Could not fetch VM stats from BOSH within %d seconds, try increasing timeout",
                        o.VMFetchTaskTimeoutSeconds)
-            return []byte{}
+            return nil
         } else {
             time.Sleep(500 * time.Millisecond)
         }

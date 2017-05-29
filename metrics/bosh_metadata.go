@@ -34,9 +34,9 @@ func (o *BoshMetadataFetcher) GetVMIPAddress(deploymentName, vmId string) string
     vm := o.getVM(deploymentName, vmId)
     if vm == nil || len(vm.Ips) == 0 {
         return ""
-    } else {
-        return vm.Ips[0]
     }
+
+    return vm.Ips[0]
 }
 
 func (o *BoshMetadataFetcher) refreshVMCacheFor(deploymentName string) {
@@ -44,7 +44,7 @@ func (o *BoshMetadataFetcher) refreshVMCacheFor(deploymentName string) {
     vms := o.client.fetchVMs(deploymentName)
     // Use index since the value will be a copy of the pointed value and not
     // the value via the original pointer
-    for i, _ := range vms {
+    for i := range vms {
         o.vmCache[vms[i].Id] = &vms[i]
     }
     o.vmCacheLastUpdate[deploymentName] = time.Now()
