@@ -118,7 +118,7 @@ var _ = Describe("TSDBServer", func() {
         dimensions := ProtoDimensionsToMap(dp.GetDimensions())
         Expect(dimensions["metric_source"]).To(Equal("cloudfoundry"))
         Expect(dimensions["deployment"]).To(Equal("cf-1f83d62c70fa873ce366"))
-        Expect(dimensions["id"]).To(Equal("cd14da4b-b764-4e45-b6c3-142a8a058f4a"))
+        Expect(dimensions["bosh_id"]).To(Equal("cd14da4b-b764-4e45-b6c3-142a8a058f4a"))
         Expect(dimensions["job"]).To(Equal("consul_server"))
         Expect(dimensions["index"]).To(Equal("0"))
         Expect(dimensions["role"]).To(Equal("unknown"))

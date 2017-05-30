@@ -136,7 +136,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         Expect(dimensions["host"]).To(Equal("127.0.0.1"))
         Expect(dimensions["job"]).To(Equal("doppler"))
         Expect(dimensions["deployment"]).To(Equal("cf"))
-        Expect(dimensions["id"]).To(Equal("abcdefg"))
+        Expect(dimensions["bosh_id"]).To(Equal("abcdefg"))
     }, 5)
 
     It("forwards ContainerMetrics from the firehose", func(done Done) {
@@ -187,7 +187,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         Expect(dimensions["host"]).To(Equal("127.0.0.1"))
         Expect(dimensions["job"]).To(Equal("diego"))
         Expect(dimensions["deployment"]).To(Equal("cf"))
-        Expect(dimensions["id"]).To(Equal("abcdefg"))
+        Expect(dimensions["bosh_id"]).To(Equal("abcdefg"))
         Expect(dimensions["app_id"]).To(Equal("testapp"))
         Expect(dimensions["app_instance_index"]).To(Equal("2"))
         Expect(dimensions["app_name"]).To(Equal("app-testapp"))

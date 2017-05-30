@@ -136,12 +136,14 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
         "job": envelope.GetJob(),
         "deployment": envelope.GetDeployment(),
         "host": envelope.GetIp(),
-        // "index" in the firehose is a long guid value, whereas in bosh hm
-        // metrics, it is a simple cardinal # indicating the instance index
-        // (e.g. 0, 1, 2, etc.).  Call the firehose "index" the same as the
-        // BOSH HM "id" field for consistency.  They appear to be the same
-        // thing.
-        "id": envelope.GetIndex(),
+        // "index" in the firehose is a long guid value that indicates the BOSH
+		// instance id, whereas in BOSH HM metrics, it is a simple cardinal #
+		// indicating the instance index (e.g. 0, 1, 2, etc.).  Call the
+		// firehose "index" the same as the BOSH HM "id" field for consistency.
+		// They appear to be the same thing.
+		// Also, don't just call it "id" since that is a reserved dimension
+		// name in the backend.
+        "bosh_id": envelope.GetIndex(),
         "metric_source": "cloudfoundry",
     }
 

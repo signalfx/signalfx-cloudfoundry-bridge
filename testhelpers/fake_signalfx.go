@@ -30,6 +30,9 @@ func (f *FakeSignalFx) Start() {
 
 func (f *FakeSignalFx) Close() {
     f.server.Close()
+	for len(f.ReceivedContents) > 0 {
+		<-f.ReceivedContents
+	}
 }
 
 func (f *FakeSignalFx) URL() string {

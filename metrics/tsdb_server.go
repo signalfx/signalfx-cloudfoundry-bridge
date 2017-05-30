@@ -154,10 +154,14 @@ func (o *TSDBServer) buildDatapoint(message string) (*datapoint.Datapoint, error
     }
     dimensions := buildMap(tokens, 4)
 
+	// "id" is a reserved property in the backend so don't use it
+	dimensions["bosh_id"] = dimensions["id"]
+	delete(dimensions, "id")
+
     dimensions["metric_source"] = "cloudfoundry"
 
-    if dimensions["id"] != "" {
-        ipAddr := o.bosh.GetVMIPAddress(dimensions["deployment"], dimensions["id"])
+    if dimensions["bosh_id"] != "" {
+        ipAddr := o.bosh.GetVMIPAddress(dimensions["deployment"], dimensions["bosh_id"])
         if ipAddr != "" {
             dimensions["host"] = ipAddr
         }
