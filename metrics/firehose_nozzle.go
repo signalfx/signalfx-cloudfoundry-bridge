@@ -7,8 +7,6 @@ import (
     "strconv"
     "time"
 
-    //"github.com/davecgh/go-spew/spew"
-
     "github.com/cloudfoundry/noaa/consumer"
     "github.com/cloudfoundry/sonde-go/events"
     "github.com/signalfx/golib/datapoint"
@@ -147,6 +145,8 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
         "metric_source": "cloudfoundry",
     }
 
+	properties := map[string]string{}
+
     for k, v := range envelope.GetTags() {
         dimensions[k] = v
     }
@@ -157,18 +157,21 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
     case events.Envelope_ContainerMetric:
         contMetric := envelope.GetContainerMetric()
         guid := contMetric.GetApplicationId()
-        dimensions["app_id"] = guid
-        dimensions["app_instance_index"] = strconv.Itoa(int(contMetric.GetInstanceIndex()))
-        dimensions["app_name"] = o.metadataFetcher.GetAppNameForGUID(guid)
-        dimensions["app_space"] = o.metadataFetcher.GetSpaceNameForGUID(guid)
-        dimensions["app_org"] = o.metadataFetcher.GetOrgNameForGUID(guid)
 
-        return makeContainerDatapoints(dimensions, ts, contMetric)
+        dimensions["app_instance_index"] = strconv.Itoa(int(contMetric.GetInstanceIndex()))
+        dimensions["app_id"] = guid
+
+        properties["app_name"] = o.metadataFetcher.GetAppNameForGUID(guid)
+        properties["app_space"] = o.metadataFetcher.GetSpaceNameForGUID(guid)
+        properties["app_org"] = o.metadataFetcher.GetOrgNameForGUID(guid)
+
+        return makeContainerDatapoints(dimensions, properties, ts, contMetric)
     case events.Envelope_ValueMetric:
         valueMetric := envelope.GetValueMetric()
         return []*datapoint.Datapoint {
-            datapoint.New(origin + "." + valueMetric.GetName(),
+            NewDatapointWithProps(origin + "." + valueMetric.GetName(),
                       dimensions,
+					  properties,
                       datapoint.NewFloatValue(valueMetric.GetValue()),
                       datapointType(origin, valueMetric.GetName(), datapoint.Gauge),
                       ts),
@@ -176,8 +179,9 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
     case events.Envelope_CounterEvent:
         counterMetric := envelope.GetCounterEvent()
         return []*datapoint.Datapoint {
-            datapoint.New(origin + "." + counterMetric.GetName(),
+            NewDatapointWithProps(origin + "." + counterMetric.GetName(),
                       dimensions,
+					  properties,
                       datapoint.NewIntValue(int64(counterMetric.GetTotal())),
                       datapointType(origin, counterMetric.GetName(), datapoint.Counter),
                       ts),
@@ -197,31 +201,37 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
 }
 
 func makeContainerDatapoints(dimensions map[string]string,
+                             properties map[string]string,
                              timestamp time.Time,
                              contMetric *events.ContainerMetric) []*datapoint.Datapoint {
     return []*datapoint.Datapoint {
-        datapoint.New("container.cpu_percentage",
+        NewDatapointWithProps("container.cpu_percentage",
             dimensions,
+			properties,
             datapoint.NewFloatValue(contMetric.GetCpuPercentage()),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("container.memory_bytes",
+        NewDatapointWithProps("container.memory_bytes",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetMemoryBytes())),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("container.memory_bytes_quota",
+        NewDatapointWithProps("container.memory_bytes_quota",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetMemoryBytesQuota())),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("container.disk_bytes",
+        NewDatapointWithProps("container.disk_bytes",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetDiskBytes())),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("container.disk_bytes_quota",
+        NewDatapointWithProps("container.disk_bytes_quota",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetDiskBytesQuota())),
             datapoint.Gauge,
             timestamp),

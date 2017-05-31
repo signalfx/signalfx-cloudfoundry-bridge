@@ -25,7 +25,7 @@ export INSECURE_SSL_SKIP_VERIFY=true
 export APP_METADATA_CACHE_EXPIRY_SECONDS=300
 
 export SIGNALFX_ACCESS_TOKEN=$(cat $DIR/dev-env.sfx-token)
-#export SIGNALFX_INGEST_URL=http://lab-ingest.corp.signalfuse.com/v2/datapoint
-export SIGNALFX_INGEST_URL=https://ingest.signalfx.com/v2/datapoint
+export SIGNALFX_INGEST_URL=http://lab-ingest.corp.signalfuse.com/v2/datapoint
+#export SIGNALFX_INGEST_URL=https://ingest.signalfx.com/v2/datapoint
 
 export DEBUG=yes
