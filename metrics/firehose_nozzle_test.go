@@ -54,6 +54,8 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
             FirehoseIdleTimeoutSeconds: 1,
             SignalFxIngestURL:    fakeSignalFx.URL(),
             SignalFxAccessToken:  "s3cr3t",
+            DeploymentsToInclude: []string{"cf", "redis"},
+            MetricsToExclude:     []string{"cc.log_count.all", "cc.log_count.debug"},
         }
 
         client = sfxclient.NewHTTPSink()
@@ -69,8 +71,10 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         }
         metadataFetcher := metrics.NewAppMetadataFetcher(cloudfoundryClient)
 
+        metricFilter := metrics.NewMetricFilter(config)
+
         fakeFirehose.KeepConnectionAlive()
-        nozzle = metrics.NewSignalFxFirehoseNozzle(config, tokenFetcher, client, metadataFetcher)
+        nozzle = metrics.NewSignalFxFirehoseNozzle(config, tokenFetcher, client, metadataFetcher, metricFilter)
     })
 
     AfterEach(func() {
@@ -95,7 +99,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
                     Value: proto.Float64(float64(i)),
                     Unit:  proto.String("gauge"),
                 },
-                Deployment: proto.String("deployment-name"),
+                Deployment: proto.String("cf"),
                 Job:        proto.String("doppler"),
                 Index:      proto.String("abcdefg"),
                 Ip:         proto.String("127.0.0.1"),
@@ -131,8 +135,8 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         Expect(dimensions["metric_source"]).To(Equal("cloudfoundry"))
         Expect(dimensions["host"]).To(Equal("127.0.0.1"))
         Expect(dimensions["job"]).To(Equal("doppler"))
-        Expect(dimensions["deployment"]).To(Equal("deployment-name"))
-        Expect(dimensions["id"]).To(Equal("abcdefg"))
+        Expect(dimensions["deployment"]).To(Equal("cf"))
+        Expect(dimensions["bosh_id"]).To(Equal("abcdefg"))
     }, 5)
 
     It("forwards ContainerMetrics from the firehose", func(done Done) {
@@ -152,7 +156,7 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
                 MemoryBytesQuota: proto.Uint64(10000),
                 DiskBytesQuota: proto.Uint64(10000),
             },
-            Deployment: proto.String("deployment-name"),
+            Deployment: proto.String("cf"),
             Job:        proto.String("diego"),
             Index:      proto.String("abcdefg"),
             Ip:         proto.String("127.0.0.1"),
@@ -171,20 +175,52 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
             metricNames[i] = dp.GetMetric()
         }
         Expect(metricNames).To(ConsistOf(
-            "cpu_percentage", "memory_bytes", "disk_bytes", "memory_bytes_quota", "disk_bytes_quota"))
+            "container.cpu_percentage",
+            "container.memory_bytes",
+            "container.disk_bytes",
+            "container.memory_bytes_quota",
+            "container.disk_bytes_quota"))
 
         By("Setting the right dimensions")
         dimensions := ProtoDimensionsToMap(datapoints[0].GetDimensions())
+        properties := ProtoPropertiesToMap(datapoints[0].GetProperties())
+
         Expect(dimensions["metric_source"]).To(Equal("cloudfoundry"))
         Expect(dimensions["host"]).To(Equal("127.0.0.1"))
         Expect(dimensions["job"]).To(Equal("diego"))
-        Expect(dimensions["deployment"]).To(Equal("deployment-name"))
-        Expect(dimensions["id"]).To(Equal("abcdefg"))
+        Expect(dimensions["deployment"]).To(Equal("cf"))
+        Expect(dimensions["bosh_id"]).To(Equal("abcdefg"))
         Expect(dimensions["app_id"]).To(Equal("testapp"))
         Expect(dimensions["app_instance_index"]).To(Equal("2"))
-        Expect(dimensions["app_name"]).To(Equal("app-testapp"))
-        Expect(dimensions["app_org"]).To(Equal("myorg"))
-        Expect(dimensions["app_space"]).To(Equal("myspace"))
+        Expect(properties["app_name"]).To(Equal("app-testapp"))
+        Expect(properties["app_org"]).To(Equal("myorg"))
+        Expect(properties["app_space"]).To(Equal("myspace"))
+    }, 5)
+
+    It("excludes metrics in blacklist", func(done Done) {
+        defer close(done)
+        defer GinkgoRecover()
+
+        envelope := events.Envelope{
+            Origin:    proto.String("cc"),
+            Timestamp: proto.Int64(10000000000),
+            EventType: events.Envelope_ValueMetric.Enum(),
+            ValueMetric: &events.ValueMetric{
+                Name:  proto.String(fmt.Sprintf("log_count.all")),
+                Value: proto.Float64(1000),
+                Unit:  proto.String("gague"),
+            },
+            Deployment: proto.String("cf"),
+            Job:        proto.String("doppler"),
+            Index:      proto.String("abcdefg"),
+            Ip:         proto.String("127.0.0.1"),
+        }
+        fakeFirehose.AddEvent(envelope)
+
+        go nozzle.Start()
+        defer nozzle.Stop()
+
+        fakeSignalFx.EnsureNoDatapoints()
     }, 5)
 
     Context("when the firehose sends an error", func() {

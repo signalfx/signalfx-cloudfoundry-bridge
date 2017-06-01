@@ -25,24 +25,26 @@ const tsdbPort = 13321
 const initialBufferCapacity = 10000
 
 type TSDBServer struct {
-	client        SignalFxClient
-	flushInterval int
-	port          int
-	bosh          *BoshMetadataFetcher
-	stop          chan bool
+    MetricFilter
+    client        SignalFxClient
+    flushInterval int
+    port          int
+    bosh          *BoshMetadataFetcher
+    stop          chan bool
 }
 
-func NewTSDBServer(client SignalFxClient, flushInterval int, port int, bosh *BoshMetadataFetcher) *TSDBServer {
+func NewTSDBServer(client SignalFxClient, flushInterval int, port int, bosh *BoshMetadataFetcher, metricFilter *MetricFilter) *TSDBServer {
     if port == 0 {
         port = tsdbPort
     }
 
     return &TSDBServer{
+        MetricFilter:     *metricFilter,
         client:           client,
-		flushInterval:    flushInterval,
-		port:             port,
-		bosh:             bosh,
-		stop:             make(chan bool),
+        flushInterval:    flushInterval,
+        port:             port,
+        bosh:             bosh,
+        stop:             make(chan bool),
     }
 }
 
@@ -56,7 +58,7 @@ func (o *TSDBServer) Start() (error) {
 }
 
 func (o *TSDBServer) Stop() {
-	o.stop <- true
+    o.stop <- true
 }
 
 func (o *TSDBServer) startMessageHandler() chan<- string {
@@ -78,11 +80,11 @@ func (o *TSDBServer) handleMessages(tsdbLines chan string) {
     var message string
     for {
         select {
-		case <- o.stop:
-			return
+        case <- o.stop:
+            return
         case message = <-tsdbLines:
             dp, err := o.buildDatapoint(message)
-            if err != nil {
+            if err != nil || !o.shouldShipDatapoint(dp) {
                 continue
             }
 
@@ -91,7 +93,7 @@ func (o *TSDBServer) handleMessages(tsdbLines chan string) {
             // Just send the datapoints synchronously for now since the data channel can buffer
             err := o.client.AddDatapoints(context.Background(), datapointBuffer)
 
-			log.Printf("Pushing %d BOSH HM datapoints to SignalFx", len(datapointBuffer))
+            log.Printf("Pushing %d BOSH HM datapoints to SignalFx", len(datapointBuffer))
 
             // Right now if there is an error shipping the datapoints to
             // SignalFx, we just forget about them and move on.  Some other
@@ -152,14 +154,18 @@ func (o *TSDBServer) buildDatapoint(message string) (*datapoint.Datapoint, error
     }
     dimensions := buildMap(tokens, 4)
 
+	// "id" is a reserved property in the backend so don't use it
+	dimensions["bosh_id"] = dimensions["id"]
+	delete(dimensions, "id")
+
     dimensions["metric_source"] = "cloudfoundry"
 
-	if dimensions["id"] != "" {
-		ipAddr := o.bosh.GetVMIPAddress(dimensions["deployment"], dimensions["id"])
-		if ipAddr != "" {
-			dimensions["host"] = ipAddr
-		}
-	}
+    if dimensions["bosh_id"] != "" {
+        ipAddr := o.bosh.GetVMIPAddress(dimensions["deployment"], dimensions["bosh_id"])
+        if ipAddr != "" {
+            dimensions["host"] = ipAddr
+        }
+    }
 
     return datapoint.New(metricName,
                          dimensions,

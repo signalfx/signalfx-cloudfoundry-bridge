@@ -1,6 +1,8 @@
 package metrics
 
 import (
+    "strings"
+
     "github.com/caarlos0/env"
 )
 
@@ -11,9 +13,9 @@ type Config struct {
     CFPassword                     string   `env:"CF_PASSWORD,required"`
     InsecureSSLSkipVerify          bool     `env:"INSECURE_SSL_SKIP_VERIFY" envDefault:"false"`
 
-	BoshDirectorURL                string   `env:"BOSH_DIRECTOR_URL,required"`
-	BoshUsername                   string   `env:"BOSH_CLIENT_ID,required"`
-	BoshPassword                   string   `env:"BOSH_CLIENT_SECRET,required"`
+    BoshDirectorURL                string   `env:"BOSH_DIRECTOR_URL,required"`
+    BoshUsername                   string   `env:"BOSH_CLIENT_ID,required"`
+    BoshPassword                   string   `env:"BOSH_CLIENT_SECRET,required"`
 
     // This will be populated automatically in the main package if not supplied
     TrafficControllerURL           string   `env:"TRAFFIC_CONTROLLER_URL" envDefault:""`
@@ -21,7 +23,8 @@ type Config struct {
     FlushIntervalSeconds           int      `env:"FLUSH_INTERVAL_SECONDS" envDefault:"3"`
     FirehoseIdleTimeoutSeconds     int      `env:"FIREHOSE_IDLE_TIMEOUT_SECONDS" envDefault:"20"`
     FirehoseReconnectDelaySeconds  int      `env:"FIREHOSE_RECONNECT_DELAY_SECONDS" envDefault:"5"`
-	DeploymentsToWatch              []string `env:"DEPLOYMENTS_TO_WATCH" envDefault:"" envSeparator:","`
+    DeploymentsToInclude           []string `env:"DEPLOYMENTS_TO_INCLUDE" envDefault:"" envSeparator:";"`
+    MetricsToExclude               []string `env:"METRICS_TO_EXCLUDE" envDefault:"" envSeparator:";"`
 
     AppMetadataCacheExpirySeconds  int       `env:"APP_METADATA_CACHE_EXPIRY_SECONDS" envDefault:"300"`
 
@@ -32,6 +35,14 @@ type Config struct {
 func GetConfigFromEnv() (*Config, error) {
     cfg := Config{}
     err := env.Parse(&cfg)
+
+    for i, v := range cfg.DeploymentsToInclude {
+        cfg.DeploymentsToInclude[i] = strings.TrimSpace(v)
+    }
+
+    for i, v := range cfg.MetricsToExclude {
+        cfg.MetricsToExclude[i] = strings.TrimSpace(v)
+    }
 
     return &cfg, err
 }

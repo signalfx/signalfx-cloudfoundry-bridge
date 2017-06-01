@@ -5,10 +5,7 @@ import (
     "crypto/tls"
     "log"
     "strconv"
-    "strings"
     "time"
-
-	//"github.com/davecgh/go-spew/spew"
 
     "github.com/cloudfoundry/noaa/consumer"
     "github.com/cloudfoundry/sonde-go/events"
@@ -16,6 +13,7 @@ import (
 )
 
 type SignalFxFirehoseNozzle struct {
+    MetricFilter
     config                *Config
     errs                  <-chan error
     messages              <-chan *events.Envelope
@@ -26,9 +24,9 @@ type SignalFxFirehoseNozzle struct {
     datapointBuffer       []*datapoint.Datapoint
     totalMessagesReceived int
     metadataFetcher       *AppMetadataFetcher
-    // An optimization to allow quick lookups to test whether to process an
-    // envelope based on deployment name.
     deploymentMap         map[string]bool
+    // Similar to the above
+    metricsExcluded       map[string]bool
 }
 
 type AuthTokenFetcher interface {
@@ -38,14 +36,11 @@ type AuthTokenFetcher interface {
 func NewSignalFxFirehoseNozzle(config *Config,
                                tokenFetcher AuthTokenFetcher,
                                client SignalFxClient,
-                               metadataFetcher *AppMetadataFetcher) *SignalFxFirehoseNozzle {
-
-    deploymentMap := make(map[string]bool)
-    for _, v := range config.DeploymentsToWatch {
-        deploymentMap[strings.TrimSpace(v)] = true
-    }
+                               metadataFetcher *AppMetadataFetcher,
+                               metricFilter *MetricFilter) *SignalFxFirehoseNozzle {
 
     return &SignalFxFirehoseNozzle{
+        MetricFilter:     *metricFilter,
         config:           config,
         client:           client,
         errs:             make(<-chan error),
@@ -54,7 +49,6 @@ func NewSignalFxFirehoseNozzle(config *Config,
         authTokenFetcher: tokenFetcher,
         datapointBuffer:  make([]*datapoint.Datapoint, 0, 10000),
         metadataFetcher:  metadataFetcher,
-        deploymentMap:    deploymentMap,
     }
 }
 
@@ -91,19 +85,17 @@ func (o *SignalFxFirehoseNozzle) consumeFirehose() {
         case <-ticker.C:
             o.pushMetrics()
         case envelope := <-o.messages:
-            if o.shouldProcessEnvelope(envelope) {
-                dps := o.datapointsFromEnvelope(envelope)
-                o.datapointBuffer = append(o.datapointBuffer, dps...)
+            dps := o.datapointsFromEnvelope(envelope)
+            for i, _ := range dps {
+                if o.shouldShipDatapoint(dps[i]) {
+                    o.datapointBuffer = append(o.datapointBuffer, dps[i])
+                }
             }
         case err := <-o.errs:
             o.handleError(err)
             o.pushMetrics()
         }
     }
-}
-
-func (o *SignalFxFirehoseNozzle) shouldProcessEnvelope(envelope *events.Envelope) bool {
-    return len(o.deploymentMap) == 0 || o.deploymentMap[envelope.GetDeployment()]
 }
 
 func (o *SignalFxFirehoseNozzle) pushMetrics() {
@@ -118,7 +110,7 @@ func (o *SignalFxFirehoseNozzle) pushMetrics() {
         log.Print("Error shipping firehose datapoints to SignalFx: ", err)
         // If there is an error sending datapoints then just forget about them.
     }
-	o.datapointBuffer = o.datapointBuffer[:0]
+    o.datapointBuffer = o.datapointBuffer[:0]
 }
 
 func (o *SignalFxFirehoseNozzle) handleError(err error) {
@@ -142,18 +134,22 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
         "job": envelope.GetJob(),
         "deployment": envelope.GetDeployment(),
         "host": envelope.GetIp(),
-		// "index" in the firehose is a long guid value, whereas in bosh hm
-		// metrics, it is a simple cardinal # indicating the instance index
-		// (e.g. 0, 1, 2, etc.).  Call the firehose "index" the same as the
-		// BOSH HM "id" field for consistency.  They appear to be the same
-		// thing.
-        "id": envelope.GetIndex(),
+        // "index" in the firehose is a long guid value that indicates the BOSH
+		// instance id, whereas in BOSH HM metrics, it is a simple cardinal #
+		// indicating the instance index (e.g. 0, 1, 2, etc.).  Call the
+		// firehose "index" the same as the BOSH HM "id" field for consistency.
+		// They appear to be the same thing.
+		// Also, don't just call it "id" since that is a reserved dimension
+		// name in the backend.
+        "bosh_id": envelope.GetIndex(),
         "metric_source": "cloudfoundry",
     }
 
-	for k, v := range envelope.GetTags() {
-		dimensions[k] = v
-	}
+	properties := map[string]string{}
+
+    for k, v := range envelope.GetTags() {
+        dimensions[k] = v
+    }
 
     ts := time.Unix(0, envelope.GetTimestamp())
 
@@ -161,18 +157,21 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
     case events.Envelope_ContainerMetric:
         contMetric := envelope.GetContainerMetric()
         guid := contMetric.GetApplicationId()
-        dimensions["app_id"] = guid
-        dimensions["app_instance_index"] = strconv.Itoa(int(contMetric.GetInstanceIndex()))
-        dimensions["app_name"] = o.metadataFetcher.GetAppNameForGUID(guid)
-        dimensions["app_space"] = o.metadataFetcher.GetSpaceNameForGUID(guid)
-        dimensions["app_org"] = o.metadataFetcher.GetOrgNameForGUID(guid)
 
-        return makeContainerDatapoints(dimensions, ts, contMetric)
+        dimensions["app_instance_index"] = strconv.Itoa(int(contMetric.GetInstanceIndex()))
+        dimensions["app_id"] = guid
+
+        properties["app_name"] = o.metadataFetcher.GetAppNameForGUID(guid)
+        properties["app_space"] = o.metadataFetcher.GetSpaceNameForGUID(guid)
+        properties["app_org"] = o.metadataFetcher.GetOrgNameForGUID(guid)
+
+        return makeContainerDatapoints(dimensions, properties, ts, contMetric)
     case events.Envelope_ValueMetric:
         valueMetric := envelope.GetValueMetric()
         return []*datapoint.Datapoint {
-            datapoint.New(origin + "." + valueMetric.GetName(),
+            NewDatapointWithProps(origin + "." + valueMetric.GetName(),
                       dimensions,
+					  properties,
                       datapoint.NewFloatValue(valueMetric.GetValue()),
                       datapointType(origin, valueMetric.GetName(), datapoint.Gauge),
                       ts),
@@ -180,8 +179,9 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
     case events.Envelope_CounterEvent:
         counterMetric := envelope.GetCounterEvent()
         return []*datapoint.Datapoint {
-            datapoint.New(origin + "." + counterMetric.GetName(),
+            NewDatapointWithProps(origin + "." + counterMetric.GetName(),
                       dimensions,
+					  properties,
                       datapoint.NewIntValue(int64(counterMetric.GetTotal())),
                       datapointType(origin, counterMetric.GetName(), datapoint.Counter),
                       ts),
@@ -192,8 +192,8 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
     // TODO: figure out what these could be and derive metrics if applicable
     case events.Envelope_Error:
         return []*datapoint.Datapoint{}
-	case events.Envelope_LogMessage:
-		return []*datapoint.Datapoint{}
+    case events.Envelope_LogMessage:
+        return []*datapoint.Datapoint{}
     default:
         log.Printf("Unknown envelope type: %s", eventType)
         return []*datapoint.Datapoint{}
@@ -201,31 +201,37 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
 }
 
 func makeContainerDatapoints(dimensions map[string]string,
+                             properties map[string]string,
                              timestamp time.Time,
                              contMetric *events.ContainerMetric) []*datapoint.Datapoint {
     return []*datapoint.Datapoint {
-        datapoint.New("cpu_percentage",
+        NewDatapointWithProps("container.cpu_percentage",
             dimensions,
+			properties,
             datapoint.NewFloatValue(contMetric.GetCpuPercentage()),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("memory_bytes",
+        NewDatapointWithProps("container.memory_bytes",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetMemoryBytes())),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("memory_bytes_quota",
+        NewDatapointWithProps("container.memory_bytes_quota",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetMemoryBytesQuota())),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("disk_bytes",
+        NewDatapointWithProps("container.disk_bytes",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetDiskBytes())),
             datapoint.Gauge,
             timestamp),
-        datapoint.New("disk_bytes_quota",
+        NewDatapointWithProps("container.disk_bytes_quota",
             dimensions,
+			properties,
             datapoint.NewIntValue(int64(contMetric.GetDiskBytesQuota())),
             datapoint.Gauge,
             timestamp),

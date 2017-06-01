@@ -68,19 +68,21 @@ func main() {
                                 config.InsecureSSLSkipVerify)
     bosh := NewBoshMetadataFetcher(boshClient)
 
+	metricFilter := NewMetricFilter(config)
+
     errChan := make(chan error)
 
     go func() {
         metadataFetcher := NewAppMetadataFetcher(cloudfoundry)
         metadataFetcher.CacheExpirySeconds = config.AppMetadataCacheExpirySeconds
 
-        nozzle := NewSignalFxFirehoseNozzle(config, cfTokenFetcher, sfxClient, metadataFetcher)
+        nozzle := NewSignalFxFirehoseNozzle(config, cfTokenFetcher, sfxClient, metadataFetcher, metricFilter)
         nozzle.Start()
         errChan <- errors.New("Firehose Nozzle quit unexpectedly")
     }()
 
     go func() {
-        tsdbErr := NewTSDBServer(sfxClient, config.FlushIntervalSeconds, 0, bosh).Start()
+        tsdbErr := NewTSDBServer(sfxClient, config.FlushIntervalSeconds, 0, bosh, metricFilter).Start()
 
         errChan <- tsdbErr
     }()

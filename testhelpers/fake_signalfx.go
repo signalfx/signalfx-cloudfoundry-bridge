@@ -30,6 +30,9 @@ func (f *FakeSignalFx) Start() {
 
 func (f *FakeSignalFx) Close() {
     f.server.Close()
+	for len(f.ReceivedContents) > 0 {
+		<-f.ReceivedContents
+	}
 }
 
 func (f *FakeSignalFx) URL() string {
@@ -56,4 +59,8 @@ func (f *FakeSignalFx) GetIngestedDatapoints() []*sfxproto.DataPoint {
     Expect(err).ToNot(HaveOccurred())
 
     return dpUpload.GetDatapoints()
+}
+
+func (f *FakeSignalFx) EnsureNoDatapoints() {
+    Consistently(f.ReceivedContents, 4).ShouldNot(Receive())
 }
