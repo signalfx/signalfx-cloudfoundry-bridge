@@ -14,3 +14,14 @@ func ProtoDimensionsToMap(dims []*sfxproto.Dimension) (m map[string]string) {
     return m
 }
 
+func ProtoPropertiesToMap(props []*sfxproto.Property) (m map[string]string) {
+    m = make(map[string]string)
+
+    for _, p := range props {
+		// We only use string props in this app
+        m[p.GetKey()] = p.GetValue().GetStrValue()
+    }
+    return m
+}
+
+

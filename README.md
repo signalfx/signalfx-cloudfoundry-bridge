@@ -154,7 +154,7 @@ CF deployments, steps will differ but be mostly the same.
 
 ```sh
 $ glide install
-$ go build
+$ go build -o signalfx-bridge
 $ # Set envvars (see above)
 $ ./signalfx-bridge
 ```
