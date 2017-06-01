@@ -5,11 +5,15 @@ import (
 )
 
 type Config struct {
-    CloudFoundryApiUrl             string   `env:"CLOUDFOUNDRY_API_URL,required"`
-    UAAURL                         string   `env:"UAA_URL,required"`
-    Username                       string   `env:"UAA_USERNAME,required"`
-    Password                       string   `env:"UAA_PASSWORD,required"`
+    CloudFoundryApiURL             string   `env:"CLOUDFOUNDRY_API_URL,required"`
+    CFUAAURL                       string   `env:"CF_UAA_URL,required"`
+    CFUsername                     string   `env:"CF_USERNAME,required"`
+    CFPassword                     string   `env:"CF_PASSWORD,required"`
     InsecureSSLSkipVerify          bool     `env:"INSECURE_SSL_SKIP_VERIFY" envDefault:"false"`
+
+	BoshDirectorURL                string   `env:"BOSH_DIRECTOR_URL,required"`
+	BoshUsername                   string   `env:"BOSH_CLIENT_ID,required"`
+	BoshPassword                   string   `env:"BOSH_CLIENT_SECRET,required"`
 
     // This will be populated automatically in the main package if not supplied
     TrafficControllerURL           string   `env:"TRAFFIC_CONTROLLER_URL" envDefault:""`

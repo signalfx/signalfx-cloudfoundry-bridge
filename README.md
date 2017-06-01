@@ -60,6 +60,13 @@ uaac client add \
   --authorities oauth.login,doppler.firehose,cloud_controller.admin_read_only
 ```
 
+## BOSH Director Access
+The Bridge needs access to the BOSH directors to correctly link BOSH Health
+Metrics to IP addresses of the VMs (unfortunately the BOSH HM Metrics don't
+include IP address).  See [Creating a BOSH
+Client](https://docs.pivotal.io/pivotalcf/1-10/customizing/opsmanager-create-bosh-client.html)
+on how to do this with Pivotal Cloud Foundry.  If you are using a non-Pivotal
+CF deployments, steps will differ but probably be mostly the same.
 
 # Build
 
@@ -90,4 +97,21 @@ You need [ginkgo](http://onsi.github.io/ginkgo/) and go 1.5+ to run the tests. T
 go build
 ginkgo -r
 
+```
+
+## Local Development
+In our Pivotal CF deployment, I setup a tinyproxy instance on the Ops Manager
+server port 8888 that allows HTTPS to the necessary ports (default is only 443 and 563).
+I then forward local port 8888 to that remote server to use it as an HTTP/HTTPS
+proxy without opening up the AWS firewall.  I also forward the BOSH HM Metrics that
+are configured to come to the Ops Manager machine on port 13322 to port 13321
+on my local machine.
+
+```sh
+ssh pcf-ops -R 13322:localhost:13321 -L 8888:localhost:8888 -N
+```
+
+Envvars to use tinyproxy forwarded to localhost:
+```sh
+export http_proxy=http://127.0.0.1:8888 https_proxy=http://127.0.0.1:8888
 ```

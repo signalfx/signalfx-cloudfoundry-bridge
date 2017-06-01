@@ -28,11 +28,11 @@ type TSDBServer struct {
 	client        SignalFxClient
 	flushInterval int
 	port          int
-	ipLookup      *IPLookup
+	bosh          *BoshMetadataFetcher
 	stop          chan bool
 }
 
-func NewTSDBServer(client SignalFxClient, flushInterval int, port int, ipLookup *IPLookup) *TSDBServer {
+func NewTSDBServer(client SignalFxClient, flushInterval int, port int, bosh *BoshMetadataFetcher) *TSDBServer {
     if port == 0 {
         port = tsdbPort
     }
@@ -41,7 +41,7 @@ func NewTSDBServer(client SignalFxClient, flushInterval int, port int, ipLookup 
         client:           client,
 		flushInterval:    flushInterval,
 		port:             port,
-		ipLookup:         ipLookup,
+		bosh:             bosh,
 		stop:             make(chan bool),
     }
 }
@@ -155,7 +155,7 @@ func (o *TSDBServer) buildDatapoint(message string) (*datapoint.Datapoint, error
     dimensions["metric_source"] = "cloudfoundry"
 
 	if dimensions["id"] != "" {
-		ipAddr := o.ipLookup.GetIPAddress(dimensions["id"])
+		ipAddr := o.bosh.GetVMIPAddress(dimensions["deployment"], dimensions["id"])
 		if ipAddr != "" {
 			dimensions["host"] = ipAddr
 		}

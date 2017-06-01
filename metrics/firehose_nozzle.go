@@ -29,7 +29,6 @@ type SignalFxFirehoseNozzle struct {
     // An optimization to allow quick lookups to test whether to process an
     // envelope based on deployment name.
     deploymentMap         map[string]bool
-    ipLookup              *IPLookup
 }
 
 type AuthTokenFetcher interface {
@@ -39,8 +38,7 @@ type AuthTokenFetcher interface {
 func NewSignalFxFirehoseNozzle(config *Config,
                                tokenFetcher AuthTokenFetcher,
                                client SignalFxClient,
-                               metadataFetcher *AppMetadataFetcher,
-                               ipLookup *IPLookup) *SignalFxFirehoseNozzle {
+                               metadataFetcher *AppMetadataFetcher) *SignalFxFirehoseNozzle {
 
     deploymentMap := make(map[string]bool)
     for _, v := range config.DeploymentsToWatch {
@@ -57,7 +55,6 @@ func NewSignalFxFirehoseNozzle(config *Config,
         datapointBuffer:  make([]*datapoint.Datapoint, 0, 10000),
         metadataFetcher:  metadataFetcher,
         deploymentMap:    deploymentMap,
-        ipLookup:         ipLookup,
     }
 }
 
@@ -97,10 +94,6 @@ func (o *SignalFxFirehoseNozzle) consumeFirehose() {
             if o.shouldProcessEnvelope(envelope) {
                 dps := o.datapointsFromEnvelope(envelope)
                 o.datapointBuffer = append(o.datapointBuffer, dps...)
-
-                // Send the envelope to the ip lookup map so that BOSH metrics
-                // can have IP addresses
-                o.ipLookup.SubmitEnvelope(envelope)
             }
         case err := <-o.errs:
             o.handleError(err)

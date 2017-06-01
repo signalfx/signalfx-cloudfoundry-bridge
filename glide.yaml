@@ -1,8 +1,9 @@
-package: github.com/signalfx/cloudfoundry-bridge
+package: github.com/signalfx/signalfx-bridge
 import:
 - package: github.com/caarlos0/env
 - package: github.com/cloudfoundry-community/go-cfclient
-- package: github.com/cloudfoundry-incubator/uaago
+- package: github.com/signalfx/uaago
+  version: http-timeout
 - package: github.com/cloudfoundry/bosh-hm-forwarder
   subpackages:
   - tcp
