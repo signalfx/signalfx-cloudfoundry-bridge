@@ -19,7 +19,7 @@ Director tile -> Settings tab -> Director Config.
 Install this app through a [BOSH release]().
 
 You must install the BOSH HM TSDB plugin and include the following
-configuration in order to get VM health metrics: 
+configuration in order to get VM health metrics:
 
 ```yaml
 ...

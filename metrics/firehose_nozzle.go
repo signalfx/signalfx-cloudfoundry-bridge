@@ -7,6 +7,8 @@ import (
     "strconv"
     "time"
 
+	//"github.com/davecgh/go-spew/spew"
+
     "github.com/cloudfoundry/noaa/consumer"
     "github.com/cloudfoundry/sonde-go/events"
     "github.com/signalfx/golib/datapoint"
@@ -161,9 +163,15 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
         dimensions["app_instance_index"] = strconv.Itoa(int(contMetric.GetInstanceIndex()))
         dimensions["app_id"] = guid
 
+        // Send app metadata as both dims and properties since navigator views
+        // seem to really want them as properties.
         properties["app_name"] = o.metadataFetcher.GetAppNameForGUID(guid)
         properties["app_space"] = o.metadataFetcher.GetSpaceNameForGUID(guid)
         properties["app_org"] = o.metadataFetcher.GetOrgNameForGUID(guid)
+
+        dimensions["app_name"] = properties["app_name"]
+        dimensions["app_space"] = properties["app_space"]
+        dimensions["app_org"] = properties["app_org"]
 
         return makeContainerDatapoints(dimensions, properties, ts, contMetric)
     case events.Envelope_ValueMetric:
