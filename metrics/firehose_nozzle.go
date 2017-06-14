@@ -165,13 +165,9 @@ func (o *SignalFxFirehoseNozzle) datapointsFromEnvelope(envelope *events.Envelop
 
         // Send app metadata as both dims and properties since navigator views
         // seem to really want them as properties.
-        properties["app_name"] = o.metadataFetcher.GetAppNameForGUID(guid)
-        properties["app_space"] = o.metadataFetcher.GetSpaceNameForGUID(guid)
-        properties["app_org"] = o.metadataFetcher.GetOrgNameForGUID(guid)
-
-        dimensions["app_name"] = properties["app_name"]
-        dimensions["app_space"] = properties["app_space"]
-        dimensions["app_org"] = properties["app_org"]
+        dimensions["app_name"] = o.metadataFetcher.GetAppNameForGUID(guid)
+        dimensions["app_space"] = o.metadataFetcher.GetSpaceNameForGUID(guid)
+        dimensions["app_org"] = o.metadataFetcher.GetOrgNameForGUID(guid)
 
         return makeContainerDatapoints(dimensions, properties, ts, contMetric)
     case events.Envelope_ValueMetric:

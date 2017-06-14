@@ -23,7 +23,7 @@ func main() {
         log.Fatalf("Error in config: %s", err)
     }
 
-    log.Printf("Using configuration values: %#v", config)
+    log.Printf("Using configuration values: %s", config.ScrubbedString())
 
     threadDumpChan := registerGoRoutineDumpSignalChannel()
     defer close(threadDumpChan)

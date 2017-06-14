@@ -1,6 +1,8 @@
 package metrics
 
 import (
+    "fmt"
+    "reflect"
     "strings"
 
     "github.com/caarlos0/env"
@@ -47,3 +49,20 @@ func GetConfigFromEnv() (*Config, error) {
     return &cfg, err
 }
 
+func (cfg *Config) ScrubbedString() string {
+    v := reflect.ValueOf(*cfg)
+
+    values := make(map[string]interface{}, v.NumField())
+
+    for i := 0; i < v.NumField(); i++ {
+        typeField := v.Type().Field(i)
+        if (typeField.Name == "CFPassword" ||
+            typeField.Name == "BoshPassword") {
+            values[typeField.Name] = "***********"
+        } else {
+            values[typeField.Name] = v.Field(i).Interface()
+        }
+    }
+
+    return fmt.Sprintf("%#v", values)
+}

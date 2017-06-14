@@ -183,7 +183,6 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
 
         By("Setting the right dimensions")
         dimensions := ProtoDimensionsToMap(datapoints[0].GetDimensions())
-        properties := ProtoPropertiesToMap(datapoints[0].GetProperties())
 
         Expect(dimensions["metric_source"]).To(Equal("cloudfoundry"))
         Expect(dimensions["host"]).To(Equal("127.0.0.1"))
@@ -192,9 +191,9 @@ var _ = Describe("SignalFx Firehose Nozzle", func() {
         Expect(dimensions["bosh_id"]).To(Equal("abcdefg"))
         Expect(dimensions["app_id"]).To(Equal("testapp"))
         Expect(dimensions["app_instance_index"]).To(Equal("2"))
-        Expect(properties["app_name"]).To(Equal("app-testapp"))
-        Expect(properties["app_org"]).To(Equal("myorg"))
-        Expect(properties["app_space"]).To(Equal("myspace"))
+        Expect(dimensions["app_name"]).To(Equal("app-testapp"))
+        Expect(dimensions["app_org"]).To(Equal("myorg"))
+        Expect(dimensions["app_space"]).To(Equal("myspace"))
     }, 5)
 
     It("excludes metrics in blacklist", func(done Done) {
