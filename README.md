@@ -1,5 +1,7 @@
 # Summary
-The signalfx-bridge is a CF component which forwards metrics from the Loggregator Firehose and Bosh Health Monitor to a [SignalFX](https://www.signalfx.com) deployment.
+The signalfx-bridge is a CF component which forwards metrics from the
+Loggregator Firehose and Bosh Health Monitor to a
+[SignalFX](https://www.signalfx.com) deployment.
 
 # Architecture
 

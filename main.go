@@ -12,7 +12,7 @@ import (
     "github.com/signalfx/golib/sfxclient"
     "github.com/cloudfoundry-community/go-cfclient"
 
-    . "github.com/signalfx/signalfx-bridge/metrics"
+    . "github.com/signalfx/signalfx-cloudfoundry-bridge/metrics"
 )
 
 func main() {
