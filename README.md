@@ -1,5 +1,7 @@
 # Summary
-The signalfx-bridge is a CF component which forwards metrics from the Loggregator Firehose and Bosh Health Monitor to a [SignalFX](https://www.signalfx.com) deployment.
+The signalfx-bridge is a CF component which forwards metrics from the
+Loggregator Firehose and Bosh Health Monitor to a
+[SignalFX](https://www.signalfx.com) deployment.
 
 # Architecture
 
@@ -19,7 +21,7 @@ Director tile -> Settings tab -> Director Config.
 Install this app through a [BOSH release]().
 
 You must install the BOSH HM TSDB plugin and include the following
-configuration in order to get VM health metrics: 
+configuration in order to get VM health metrics:
 
 ```yaml
 ...

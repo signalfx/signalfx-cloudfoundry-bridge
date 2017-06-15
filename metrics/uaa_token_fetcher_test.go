@@ -1,11 +1,11 @@
 package metrics_test
 
 import (
-    "github.com/signalfx/signalfx-bridge/metrics"
+    "github.com/signalfx/signalfx-cloudfoundry-bridge/metrics"
 
     . "github.com/onsi/ginkgo"
     . "github.com/onsi/gomega"
-    "github.com/signalfx/signalfx-bridge/testhelpers"
+    "github.com/signalfx/signalfx-cloudfoundry-bridge/testhelpers"
 )
 
 var _ = Describe("UaaTokenFetcher", func() {

@@ -1,4 +1,4 @@
-package: github.com/signalfx/signalfx-bridge
+package: github.com/signalfx/signalfx-cloudfoundry-bridge
 import:
 - package: github.com/caarlos0/env
 - package: github.com/cloudfoundry-community/go-cfclient

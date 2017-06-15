@@ -1,10 +1,10 @@
 hash: e442de7e3e9c88f932416b619fa954f64fe06f11e7b9096b87fd0c0391402a74
-updated: 2017-05-27T11:53:08.005191459-04:00
+updated: 2017-06-02T08:47:04.242049325-04:00
 imports:
 - name: github.com/caarlos0/env
   version: 9474f19b515f52326c7d197d2d097caa7fc7485e
 - name: github.com/cloudfoundry-community/go-cfclient
-  version: a7d44cb5dabc925e9390cf0b90112020a162d4ed
+  version: b0a4f6655a0c459b8104d68a751b1671dace80dd
 - name: github.com/cloudfoundry/bosh-hm-forwarder
   version: 91a55a61aa441f5d07ae93782849d236564e6013
   subpackages:
