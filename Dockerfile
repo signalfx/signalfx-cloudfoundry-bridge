@@ -1,4 +1,4 @@
-FROM ubuntu:yakkety
+FROM ubuntu:xenial
 
 ENV GOPATH=/go PATH=$PATH:/usr/local/go/bin:/go/bin
 
