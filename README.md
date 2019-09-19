@@ -3,6 +3,8 @@ The signalfx-bridge is a CF component which forwards metrics from the
 Loggregator Firehose and Bosh Health Monitor to a
 [SignalFX](https://www.signalfx.com) deployment.
 
+**Note**: As of PCF 2.0, Bosh VM Health Metrics are emitted by the loggregator and you will not need to enable the TSDB server, which previously served teh BOSH VM health metrics.
+
 # Architecture
 
 There are two sources of data that this application will pull from: the
