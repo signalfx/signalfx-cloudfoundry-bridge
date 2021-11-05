@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/cloudfoundry-community/go-cfclient"
-	"github.com/signalfx/golib/sfxclient"
+	"github.com/signalfx/golib/v3/sfxclient"
 
 	. "github.com/signalfx/signalfx-cloudfoundry-bridge/metrics"
 )

@@ -13,7 +13,7 @@ import (
     "strconv"
 
     "github.com/cloudfoundry/bosh-hm-forwarder/tcp"
-    "github.com/signalfx/golib/datapoint"
+    "github.com/signalfx/golib/v3/datapoint"
     "golang.org/x/net/context"
 )
 

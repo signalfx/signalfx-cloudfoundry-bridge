@@ -10,7 +10,7 @@ import (
     "time"
 
     sfxproto "github.com/signalfx/com_signalfx_metrics_protobuf"
-    "github.com/signalfx/golib/sfxclient"
+    "github.com/signalfx/golib/v3/sfxclient"
 
     . "github.com/onsi/ginkgo"
     . "github.com/onsi/gomega"

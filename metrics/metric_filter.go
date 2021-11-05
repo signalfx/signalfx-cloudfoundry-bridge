@@ -3,7 +3,7 @@ package metrics
 import (
     "strings"
 
-    "github.com/signalfx/golib/datapoint"
+    "github.com/signalfx/golib/v3/datapoint"
 )
 
 // Filters datapoints based on deployment name and metric name

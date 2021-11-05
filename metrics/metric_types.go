@@ -2,7 +2,7 @@ package metrics
 
 import (
     //"log"
-    "github.com/signalfx/golib/datapoint"
+    "github.com/signalfx/golib/v3/datapoint"
 )
 
 var metricNameToType = map[string]map[string]datapoint.MetricType{
