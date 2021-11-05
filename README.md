@@ -156,19 +156,20 @@ CF deployments, steps will differ but be mostly the same.
 
 # Build
 
+This app **requires Go 1.17+**.
+
 ```sh
-$ glide install
-$ go build -o signalfx-bridge
+$ make signalfx-bridge
 $ # Set envvars (see above)
 $ ./signalfx-bridge
 ```
 
 # Tests
 
-You need [ginkgo](http://onsi.github.io/ginkgo/) and go 1.5+ to run the tests. The tests can be executed by:
+ The tests can be executed by:
+
 ```
-go build
-ginkgo -r
+go test -race ./...
 
 ```
 

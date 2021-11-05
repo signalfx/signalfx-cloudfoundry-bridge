@@ -1,7 +1,15 @@
-DOCKER_BUILD_IMAGE := cf-bridge-builder
+EXECUTABLE_NAME := signalfx-bridge
+DOCKER_IMAGE := signalfx-bridge
 
-all: metrics main.go glide.yaml glide.lock Dockerfile testhelpers
-	docker build -t $(DOCKER_BUILD_IMAGE) .
-	docker run --rm $(DOCKER_BUILD_IMAGE) > signalfx-bridge-linux-amd64
-	chmod +x signalfx-bridge-linux-amd64
+.PHONY: signalfx-bridge
+signalfx-bridge:
+	CGO_ENABLED=0 go build -o $(EXECUTABLE_NAME) .
+
+.PHONY: signalfx-bridge-linux
+signalfx-bridge-linux:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(EXECUTABLE_NAME)-linux .
+
+.PHONY: docker
+docker:
+	docker build -t $(DOCKER_IMAGE) .
 

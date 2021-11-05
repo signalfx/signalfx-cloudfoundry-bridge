@@ -1,22 +1,19 @@
-FROM ubuntu:xenial
+FROM golang:1.17 AS builder
 
-ENV GOPATH=/go PATH=$PATH:/usr/local/go/bin:/go/bin
+WORKDIR /tmp/signalfx-cloudfoundry-bridge
 
-RUN apt-get update &&\
-    apt-get install -yq wget curl git &&\
-	wget -O /tmp/go.tar.gz https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz &&\
-	tar -C /usr/local -xzf /tmp/go.tar.gz &&\
-	mkdir -p $GOPATH/bin $GOPATH/src/github.com/signalfx/signalfx-cloudfoundry-bridge &&\
-	curl https://glide.sh/get | sh
+COPY go.mod go.sum ./
 
-WORKDIR $GOPATH/src/github.com/signalfx/signalfx-cloudfoundry-bridge
+RUN go mod download
 
-COPY glide* main.go ./
+COPY main.go ./
 COPY metrics ./metrics
 COPY testhelpers ./testhelpers
+COPY Makefile ./
 
-RUN glide install github.com/signalfx/signalfx-cloudfoundry-bridge
+RUN make signalfx-bridge
 
-RUN go install
+FROM busybox:1.34
 
-CMD cat $GOPATH/bin/signalfx-cloudfoundry-bridge
+ENTRYPOINT /bin/signalfx-bridge
+COPY --from=builder /tmp/signalfx-cloudfoundry-bridge/signalfx-bridge /bin/signalfx-bridge
