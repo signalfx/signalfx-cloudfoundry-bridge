@@ -1,3 +1,5 @@
+>ℹ️&nbsp;&nbsp;SignalFx was acquired by Splunk in October 2019. See [Splunk SignalFx](https://www.splunk.com/en_us/investor-relations/acquisitions/signalfx.html) for more information.
+
 # Summary
 The signalfx-bridge is a CF component which forwards metrics from the
 Loggregator Firehose and Bosh Health Monitor to a
